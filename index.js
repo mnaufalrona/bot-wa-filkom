@@ -1,15 +1,8 @@
-// index.js
-import pkg from "whatsapp-web.js";
-const { Client, LocalAuth, MessageMedia } = pkg;
-import qrcode from "qrcode-terminal";
-import fs from "fs";
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-
-// ===== HELPERS =====
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+const fs = require("fs");
+const express = require("express");
+const path = require("path");
 
 // ===== WEB SERVER KEEP-ALIVE =====
 const app = express();
@@ -17,7 +10,7 @@ app.get("/", (req, res) => res.send("🚀 Bot WhatsApp aktif dengan Express!"));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🌐 Server aktif di port ${PORT}`));
 
-// ===== GLOBAL ERROR HANDLER =====
+// ===== HANDLER ERROR GLOBAL =====
 process.on("uncaughtException", err => console.error("❌ Uncaught Exception:", err));
 process.on("unhandledRejection", (reason, promise) =>
     console.error("❌ Unhandled Rejection at:", promise, "reason:", reason)
@@ -51,7 +44,7 @@ const quotes = [
     "Belajar dari kemarin, hidup untuk hari ini, berharap untuk besok.",
 ];
 
-// ===== INIT WHATSAPP BOT =====
+// ===== INISIALISASI WHATSAPP BOT =====
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -78,14 +71,13 @@ client.on("qr", qr => {
 
 client.on("ready", () => console.log("✅ Bot siap digunakan!"));
 
-// ===== MESSAGE HANDLER =====
+// ===== EVENT MESSAGE =====
 client.on("message", async message => {
     try {
         const msg = message.body.trim();
         if (!msg.startsWith("!")) return;
         const lowerMsg = msg.toLowerCase();
 
-        // !dosen
         if (lowerMsg === "!dosen") {
             if (!dosen.length) return message.reply("⚠️ Data dosen belum tersedia.");
             let text = "👨‍🏫 *Daftar Nomor Dosen:*\n───────────────────────\n";
@@ -97,7 +89,6 @@ client.on("message", async message => {
             return message.reply(text);
         }
 
-        // !help
         if (lowerMsg === "!help") {
             return message.reply(
                 "✨ *DAFTAR PERINTAH BOT FILKOM 2025* ✨\n───────────────────────\n" +
@@ -109,7 +100,6 @@ client.on("message", async message => {
             );
         }
 
-        // !jadwal
         if (lowerMsg === "!jadwal") {
             if (!Object.keys(jadwal).length) return message.reply("⚠️ Jadwal belum tersedia.");
             let text = "📅 *Jadwal Kuliah Mingguan*\n\n";
@@ -121,22 +111,19 @@ client.on("message", async message => {
             return message.reply(text.trim());
         }
 
-        // !matkul
         if (lowerMsg === "!matkul") {
             const mediaPath = path.join(__dirname, "jadwal.png");
             if (!fs.existsSync(mediaPath)) return message.reply("⚠️ Foto `jadwal.png` tidak ditemukan.");
-            const media = await MessageMedia.fromFilePath(mediaPath);
+            const media = MessageMedia.fromFilePath(mediaPath);
             await client.sendMessage(message.from, media, { caption: "📚 Jadwal Mata Kuliah Semester 5" });
         }
 
-        // !quote
         if (lowerMsg === "!quote") {
             const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
             return message.reply("💡 " + randomQuote);
         }
-
     } catch (err) {
-        console.error("❌ Error saat memproses pesan:", err);
+        console.error("❌ Error saat memproses pesan:", err.message);
     }
 });
 
