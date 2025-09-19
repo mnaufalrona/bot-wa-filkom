@@ -1,8 +1,13 @@
-const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
-const fs = require("fs");
-const express = require("express");
-const path = require("path");
+import { Client, LocalAuth, MessageMedia } from "whatsapp-web.js";
+import qrcode from "qrcode-terminal";
+import fs from "fs";
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// ===== HELPERS =====
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ===== WEB SERVER KEEP-ALIVE =====
 const app = express();
@@ -19,6 +24,7 @@ process.on("unhandledRejection", (reason, promise) =>
 // ===== LOAD DATA =====
 let jadwal = {};
 let dosen = [];
+
 try {
     const jadwalPath = path.join(__dirname, "jadwal.json");
     if (fs.existsSync(jadwalPath)) jadwal = JSON.parse(fs.readFileSync(jadwalPath, "utf-8"));
@@ -47,8 +53,7 @@ const quotes = [
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        executablePath:
-            process.env.CHROME_PATH || "/usr/bin/chromium-browser",
+        executablePath: process.env.CHROME_PATH || "/usr/bin/chromium-browser",
         headless: true,
         args: [
             "--no-sandbox",
@@ -78,19 +83,17 @@ client.on("message", async message => {
         if (!msg.startsWith("!")) return;
         const lowerMsg = msg.toLowerCase();
 
-        // !dosen
         if (lowerMsg === "!dosen") {
             if (!dosen.length) return message.reply("⚠️ Data dosen belum tersedia.");
             let text = "👨‍🏫 *Daftar Nomor Dosen:*\n───────────────────────\n";
             dosen.forEach(d => {
-                let noHp = d.no !== "none" ? d.no : "❌ Tidak tersedia";
+                const noHp = d.no !== "none" ? d.no : "❌ Tidak tersedia";
                 text += `📌 ${d.nama} (${d.matkul}) : ${noHp}\n`;
             });
             text += "───────────────────────";
             return message.reply(text);
         }
 
-        // !help
         if (lowerMsg === "!help") {
             return message.reply(
                 "✨ *DAFTAR PERINTAH BOT FILKOM 2025* ✨\n───────────────────────\n" +
@@ -102,7 +105,6 @@ client.on("message", async message => {
             );
         }
 
-        // !jadwal
         if (lowerMsg === "!jadwal") {
             if (!Object.keys(jadwal).length) return message.reply("⚠️ Jadwal belum tersedia.");
             let text = "📅 *Jadwal Kuliah Mingguan*\n\n";
@@ -114,7 +116,6 @@ client.on("message", async message => {
             return message.reply(text.trim());
         }
 
-        // !matkul
         if (lowerMsg === "!matkul") {
             const mediaPath = path.join(__dirname, "jadwal.png");
             if (!fs.existsSync(mediaPath)) return message.reply("⚠️ Foto `jadwal.png` tidak ditemukan.");
@@ -122,7 +123,6 @@ client.on("message", async message => {
             await client.sendMessage(message.from, media, { caption: "📚 Jadwal Mata Kuliah Semester 5" });
         }
 
-        // !quote
         if (lowerMsg === "!quote") {
             const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
             return message.reply("💡 " + randomQuote);
